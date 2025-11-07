@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Denoising of Lung Sound Recordings - Audio Samples</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Denoising of Lung Sound Recordings</h1>
+            <p> WORK IN PROGRESS </p>
+        </header>
+
+        <main>
+            <!-- Section 1: Individual Sound Types -->
+            <section class="sound-section">
+                <h2>Individual Sound Components</h2>
+                <p class="section-description">Examples of individual sound types present in lung sound recordings</p>
+
+                <div class="sound-grid">
+                    <div class="sound-card">
+                        <h3>Lung Sounds</h3>
+                        <p class="sound-description">Clean respiratory sounds</p>
+                        <div class="audio-player" data-audio="audio/lung.wav">
+                            <canvas class="waveform-canvas"></canvas>
+                            <canvas class="spectrogram-canvas"></canvas>
+                            <div class="controls">
+                                <button class="play-btn" aria-label="Play">
+                                    <svg class="play-icon" viewBox="0 0 24 24" fill="currentColor">
+                                        <path d="M8 5v14l11-7z"/>
+                                    </svg>
+                                    <svg class="pause-icon hidden" viewBox="0 0 24 24" fill="currentColor">
+                                        <path d="M6 4h4v16H6zM14 4h4v16h-4z"/>
+                                    </svg>
+                                </button>
+                                <div class="time-display">
+                                    <span class="current-time">0:00</span>
+                                    <div class="progress-bar">
+                                        <div class="progress"></div>
+                                    </div>
+                                    <span class="duration">0:00</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="sound-card">
+                        <h3>Heart Sounds</h3>
+                        <p class="sound-description">Cardiac noise contamination</p>
+                        <div class="audio-player" data-audio="audio/heart.wav">
+                            <canvas class="waveform-canvas"></canvas>
+                            <canvas class="spectrogram-canvas"></canvas>
+                            <div class="controls">
+                                <button class="play-btn" aria-label="Play">
+                                    <svg class="play-icon" viewBox="0 0 24 24" fill="currentColor">
+                                        <path d="M8 5v14l11-7z"/>
+                                    </svg>
+                                    <svg class="pause-icon hidden" viewBox="0 0 24 24" fill="currentColor">
+                                        <path d="M6 4h4v16H6zM14 4h4v16h-4z"/>
+                                    </svg>
+                                </button>
+                                <div class="time-display">
+                                    <span class="current-time">0:00</span>
+                                    <div class="progress-bar">
+                                        <div class="progress"></div>
+                                    </div>
+                                    <span class="duration">0:00</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="sound-card">
+                        <h3>Friction Sounds</h3>
+                        <p class="sound-description">Stethoscope contact noise</p>
+                        <div class="audio-player" data-audio="audio/friction.wav">
+                            <canvas class="waveform-canvas"></canvas>
+                            <canvas class="spectrogram-canvas"></canvas>
+                            <div class="controls">
+                                <button class="play-btn" aria-label="Play">
+                                    <svg class="play-icon" viewBox="0 0 24 24" fill="currentColor">
+                                        <path d="M8 5v14l11-7z"/>
+                                    </svg>
+                                    <svg class="pause-icon hidden" viewBox="0 0 24 24" fill="currentColor">
+                                        <path d="M6 4h4v16H6zM14 4h4v16h-4z"/>
+                                    </svg>
+                                </button>
+                                <div class="time-display">
+                                    <span class="current-time">0:00</span>
+                                    <div class="progress-bar">
+                                        <div class="progress"></div>
+                                    </div>
+                                    <span class="duration">0:00</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="sound-card">
+                        <h3>Environmental Noise</h3>
+                        <p class="sound-description">White/pink Gaussian noise</p>
+                        <div class="audio-player" data-audio="audio/noise.wav">
+                            <canvas class="waveform-canvas"></canvas>
+                            <canvas class="spectrogram-canvas"></canvas>
+                            <div class="controls">
+                                <button class="play-btn" aria-label="Play">
+                                    <svg class="play-icon" viewBox="0 0 24 24" fill="currentColor">
+                                        <path d="M8 5v14l11-7z"/>
+                                    </svg>
+                                    <svg class="pause-icon hidden" viewBox="0 0 24 24" fill="currentColor">
+                                        <path d="M6 4h4v16H6zM14 4h4v16h-4z"/>
+                                    </svg>
+                                </button>
+                                <div class="time-display">
+                                    <span class="current-time">0:00</span>
+                                    <div class="progress-bar">
+                                        <div class="progress"></div>
+                                    </div>
+                                    <span class="duration">0:00</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Section 2: Denoising Examples -->
+            <section class="sound-section">
+                <h2>Denoising Examples</h2>
+                <p class="section-description">Comparison of noisy input, clean reference, and STFT-U-Net output</p>
+
+                <div class="comparison-example">
+                    <h3>Example 1</h3>
+                    <div class="comparison-grid">
+                        <div class="sound-card">
+                            <h4>Noisy Input</h4>
+                            <p class="sound-description">Contaminated with heart, friction, and ambient noise</p>
+                            <div class="audio-player" data-audio="audio/example1_noisy.wav">
+                                <canvas class="waveform-canvas"></canvas>
+                                <canvas class="spectrogram-canvas"></canvas>
+                                <div class="controls">
+                                    <button class="play-btn" aria-label="Play">
+                                        <svg class="play-icon" viewBox="0 0 24 24" fill="currentColor">
+                                            <path d="M8 5v14l11-7z"/>
+                                        </svg>
+                                        <svg class="pause-icon hidden" viewBox="0 0 24 24" fill="currentColor">
+                                            <path d="M6 4h4v16H6zM14 4h4v16h-4z"/>
+                                        </svg>
+                                    </button>
+                                    <div class="time-display">
+                                        <span class="current-time">0:00</span>
+                                        <div class="progress-bar">
+                                            <div class="progress"></div>
+                                        </div>
+                                        <span class="duration">0:00</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="sound-card">
+                            <h4>Clean Reference</h4>
+                            <p class="sound-description">Ground truth lung sound</p>
+                            <div class="audio-player" data-audio="audio/example1_clean.wav">
+                                <canvas class="waveform-canvas"></canvas>
+                                <canvas class="spectrogram-canvas"></canvas>
+                                <div class="controls">
+                                    <button class="play-btn" aria-label="Play">
+                                        <svg class="play-icon" viewBox="0 0 24 24" fill="currentColor">
+                                            <path d="M8 5v14l11-7z"/>
+                                        </svg>
+                                        <svg class="pause-icon hidden" viewBox="0 0 24 24" fill="currentColor">
+                                            <path d="M6 4h4v16H6zM14 4h4v16h-4z"/>
+                                        </svg>
+                                    </button>
+                                    <div class="time-display">
+                                        <span class="current-time">0:00</span>
+                                        <div class="progress-bar">
+                                            <div class="progress"></div>
+                                        </div>
+                                        <span class="duration">0:00</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="sound-card">
+                            <h4>Model Output</h4>
+                            <p class="sound-description">STFT-U-Net denoised result</p>
+                            <div class="audio-player" data-audio="audio/example1_output.wav">
+                                <canvas class="waveform-canvas"></canvas>
+                                <canvas class="spectrogram-canvas"></canvas>
+                                <div class="controls">
+                                    <button class="play-btn" aria-label="Play">
+                                        <svg class="play-icon" viewBox="0 0 24 24" fill="currentColor">
+                                            <path d="M8 5v14l11-7z"/>
+                                        </svg>
+                                        <svg class="pause-icon hidden" viewBox="0 0 24 24" fill="currentColor">
+                                            <path d="M6 4h4v16H6zM14 4h4v16h-4z"/>
+                                        </svg>
+                                    </button>
+                                    <div class="time-display">
+                                        <span class="current-time">0:00</span>
+                                        <div class="progress-bar">
+                                            <div class="progress"></div>
+                                        </div>
+                                        <span class="duration">0:00</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="comparison-example">
+                    <h3>Example 2</h3>
+                    <div class="comparison-grid">
+                        <div class="sound-card">
+                            <h4>Noisy Input</h4>
+                            <p class="sound-description">Contaminated with heart, friction, and ambient noise</p>
+                            <div class="audio-player" data-audio="audio/example2_noisy.wav">
+                                <canvas class="waveform-canvas"></canvas>
+                                <canvas class="spectrogram-canvas"></canvas>
+                                <div class="controls">
+                                    <button class="play-btn" aria-label="Play">
+                                        <svg class="play-icon" viewBox="0 0 24 24" fill="currentColor">
+                                            <path d="M8 5v14l11-7z"/>
+                                        </svg>
+                                        <svg class="pause-icon hidden" viewBox="0 0 24 24" fill="currentColor">
+                                            <path d="M6 4h4v16H6zM14 4h4v16h-4z"/>
+                                        </svg>
+                                    </button>
+                                    <div class="time-display">
+                                        <span class="current-time">0:00</span>
+                                        <div class="progress-bar">
+                                            <div class="progress"></div>
+                                        </div>
+                                        <span class="duration">0:00</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="sound-card">
+                            <h4>Clean Reference</h4>
+                            <p class="sound-description">Ground truth lung sound</p>
+                            <div class="audio-player" data-audio="audio/example2_clean.wav">
+                                <canvas class="waveform-canvas"></canvas>
+                                <canvas class="spectrogram-canvas"></canvas>
+                                <div class="controls">
+                                    <button class="play-btn" aria-label="Play">
+                                        <svg class="play-icon" viewBox="0 0 24 24" fill="currentColor">
+                                            <path d="M8 5v14l11-7z"/>
+                                        </svg>
+                                        <svg class="pause-icon hidden" viewBox="0 0 24 24" fill="currentColor">
+                                            <path d="M6 4h4v16H6zM14 4h4v16h-4z"/>
+                                        </svg>
+                                    </button>
+                                    <div class="time-display">
+                                        <span class="current-time">0:00</span>
+                                        <div class="progress-bar">
+                                            <div class="progress"></div>
+                                        </div>
+                                        <span class="duration">0:00</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="sound-card">
+                            <h4>Model Output</h4>
+                            <p class="sound-description">STFT-U-Net denoised result</p>
+                            <div class="audio-player" data-audio="audio/example2_output.wav">
+                                <canvas class="waveform-canvas"></canvas>
+                                <canvas class="spectrogram-canvas"></canvas>
+                                <div class="controls">
+                                    <button class="play-btn" aria-label="Play">
+                                        <svg class="play-icon" viewBox="0 0 24 24" fill="currentColor">
+                                            <path d="M8 5v14l11-7z"/>
+                                        </svg>
+                                        <svg class="pause-icon hidden" viewBox="0 0 24 24" fill="currentColor">
+                                            <path d="M6 4h4v16H6zM14 4h4v16h-4z"/>
+                                        </svg>
+                                    </button>
+                                    <div class="time-display">
+                                        <span class="current-time">0:00</span>
+                                        <div class="progress-bar">
+                                            <div class="progress"></div>
+                                        </div>
+                                        <span class="duration">0:00</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <footer>
+
+        </footer>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
