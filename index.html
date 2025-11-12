@@ -161,29 +161,6 @@
                 display: block;
             }
 
-            .progress-overlay {
-                position: absolute;
-                top: 0;
-                left: 0;
-                width: 0%;
-                height: 100%;
-                background: rgba(169, 135, 255, 0.25);
-                pointer-events: none;
-                will-change: width;
-            }
-
-            .progress-line {
-                position: absolute;
-                top: 0;
-                left: 0;
-                width: 2px;
-                height: 100%;
-                background: #a987ff;
-                pointer-events: none;
-                box-shadow: 0 0 8px rgba(169, 135, 255, 0.8);
-                will-change: transform;
-            }
-
             /* Controls Styles */
             .controls {
                 display: flex;
@@ -233,7 +210,6 @@
                 display: flex;
                 align-items: center;
                 gap: 8px;
-                flex: 1;
                 font-size: 0.8rem;
                 color: #495057;
             }
@@ -245,23 +221,8 @@
                 font-size: 0.75rem;
             }
 
-            .progress-bar {
-                flex: 1;
-                height: 8px;
-                background: #e9ecef;
-                border-radius: 4px;
-                position: relative;
-                cursor: pointer;
-                overflow: hidden;
-                touch-action: none;
-            }
-
-            .progress {
-                height: 100%;
-                background: #a987ff;
-                border-radius: 4px;
-                width: 0%;
-                will-change: width;
+            .time-separator {
+                color: #6c757d;
             }
 
             /* Footer Styles */
@@ -373,10 +334,6 @@
                     font-size: 0.85rem;
                 }
 
-                .progress-bar {
-                    height: 6px;
-                }
-
                 .play-btn:hover {
                     background: #9775e8;
                 }
@@ -430,7 +387,7 @@
 
                                 <div
                                     class="audio-player"
-                                    data-audio="audio/example1_noisy.wav"
+                                    data-audio="audio/example1_noisy.mp3"
                                     data-viz="images/example1_noisy.png"
                                 >
                                     <div class="visualization-container">
@@ -439,8 +396,6 @@
                                             alt="Example 1 noisy"
                                             class="visualization-image"
                                         />
-                                        <div class="progress-overlay"></div>
-                                        <div class="progress-line"></div>
                                     </div>
                                     <div class="controls">
                                         <button
@@ -468,9 +423,9 @@
                                             <span class="current-time"
                                                 >0:00</span
                                             >
-                                            <div class="progress-bar">
-                                                <div class="progress"></div>
-                                            </div>
+                                            <span class="time-separator"
+                                                >/</span
+                                            >
                                             <span class="duration">0:00</span>
                                         </div>
                                     </div>
@@ -484,7 +439,7 @@
                                 </p>
                                 <div
                                     class="audio-player"
-                                    data-audio="audio/example1_clean.wav"
+                                    data-audio="audio/example1_clean.mp3"
                                     data-viz="images/example1_clean.png"
                                 >
                                     <div class="visualization-container">
@@ -493,8 +448,6 @@
                                             alt="Example 1 clean"
                                             class="visualization-image"
                                         />
-                                        <div class="progress-overlay"></div>
-                                        <div class="progress-line"></div>
                                     </div>
                                     <div class="controls">
                                         <button
@@ -522,9 +475,9 @@
                                             <span class="current-time"
                                                 >0:00</span
                                             >
-                                            <div class="progress-bar">
-                                                <div class="progress"></div>
-                                            </div>
+                                            <span class="time-separator"
+                                                >/</span
+                                            >
                                             <span class="duration">0:00</span>
                                         </div>
                                     </div>
@@ -538,7 +491,7 @@
                                 </p>
                                 <div
                                     class="audio-player"
-                                    data-audio="audio/example1_output.wav"
+                                    data-audio="audio/example1_output.mp3"
                                     data-viz="images/example1_output.png"
                                 >
                                     <div class="visualization-container">
@@ -547,8 +500,6 @@
                                             alt="Example 1 output"
                                             class="visualization-image"
                                         />
-                                        <div class="progress-overlay"></div>
-                                        <div class="progress-line"></div>
                                     </div>
                                     <div class="controls">
                                         <button
@@ -576,9 +527,9 @@
                                             <span class="current-time"
                                                 >0:00</span
                                             >
-                                            <div class="progress-bar">
-                                                <div class="progress"></div>
-                                            </div>
+                                            <span class="time-separator"
+                                                >/</span
+                                            >
                                             <span class="duration">0:00</span>
                                         </div>
                                     </div>
@@ -607,28 +558,18 @@
             document.querySelectorAll(".audio-player").forEach((player) => {
                 const audio = new Audio();
                 audio.preload = "metadata";
-                audio.src = player.dataset.audio;
-                
+
                 const playBtn = player.querySelector(".play-btn");
                 const playIcon = player.querySelector(".play-icon");
                 const pauseIcon = player.querySelector(".pause-icon");
                 const currentTime = player.querySelector(".current-time");
                 const duration = player.querySelector(".duration");
-                const progress = player.querySelector(".progress");
-                const progressBar = player.querySelector(".progress-bar");
-                const overlay = player.querySelector(".progress-overlay");
-                const line = player.querySelector(".progress-line");
                 const vizContainer = player.querySelector(
                     ".visualization-container",
                 );
 
                 let animationFrameId = null;
-                let containerWidth = 0;
-                let isSeeking = false;
-                let lastSyncTime = 0;
-                
-                // Detect Safari
-                const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+                let audioLoaded = false;
 
                 function formatTime(seconds) {
                     if (!isFinite(seconds)) return "0:00";
@@ -637,59 +578,47 @@
                     return m + ":" + (s < 10 ? "0" : "") + s;
                 }
 
-                // Cache container width to avoid layout thrashing
-                function updateContainerWidth() {
-                    containerWidth = overlay.parentElement.offsetWidth;
-                }
-
-                function updateProgressUI() {
-                    if (!audio.duration || isNaN(audio.duration)) return;
-                    
-                    const percent = (audio.currentTime / audio.duration) * 100;
-                    progress.style.width = percent + "%";
-                    overlay.style.width = percent + "%";
-                    
-                    // Use cached width to avoid layout reflow
-                    if (containerWidth > 0) {
-                        line.style.transform = `translateX(${(percent / 100) * containerWidth - 1}px)`;
+                function updateTimeDisplay() {
+                    if (audio.duration && !isNaN(audio.duration)) {
+                        currentTime.textContent = formatTime(audio.currentTime);
                     }
-                    currentTime.textContent = formatTime(audio.currentTime);
                 }
 
-                // Use requestAnimationFrame for smooth 60fps updates (all browsers)
-                function updateProgressRAF() {
+                // Use requestAnimationFrame for smooth time updates
+                function updateTimeRAF() {
                     if (!audio.paused && !audio.ended) {
-                        updateProgressUI();
-                        
-                        // Safari: Periodically sync to prevent drift
-                        if (isSafari) {
-                            const now = performance.now();
-                            if (now - lastSyncTime > 500) { // Sync every 500ms
-                                lastSyncTime = now;
-                            }
-                        }
-                        
-                        animationFrameId = requestAnimationFrame(updateProgressRAF);
+                        updateTimeDisplay();
+                        animationFrameId = requestAnimationFrame(updateTimeRAF);
                     }
                 }
 
-                function startAnimation() {
-                    stopAnimation();
-                    updateContainerWidth();
-                    lastSyncTime = performance.now();
-                    
-                    // Use RAF for all browsers including Safari for smooth animation
-                    animationFrameId = requestAnimationFrame(updateProgressRAF);
+                function startTimeUpdate() {
+                    stopTimeUpdate();
+                    animationFrameId = requestAnimationFrame(updateTimeRAF);
                 }
 
-                function stopAnimation() {
+                function stopTimeUpdate() {
                     if (animationFrameId) {
                         cancelAnimationFrame(animationFrameId);
                         animationFrameId = null;
                     }
                 }
 
-                playBtn.addEventListener("click", async () => {
+                // Load audio source lazily on first interaction
+                function ensureAudioLoaded() {
+                    if (!audioLoaded) {
+                        audio.src = player.dataset.audio;
+                        audio.load();
+                        audioLoaded = true;
+                    }
+                }
+
+                playBtn.addEventListener("click", async (e) => {
+                    e.preventDefault(); // Prevent any default behavior
+
+                    // Ensure audio is loaded on first click (helps with mobile)
+                    ensureAudioLoaded();
+
                     if (audio.paused) {
                         // Pause all other audio elements
                         document.querySelectorAll("audio").forEach((a) => {
@@ -697,26 +626,44 @@
                                 a.pause();
                             }
                         });
-                        
+
                         try {
-                            await audio.play();
-                            playIcon.classList.add("hidden");
-                            pauseIcon.classList.remove("hidden");
-                            startAnimation();
+                            // For mobile Chrome: ensure audio is ready
+                            if (audio.readyState < 2) {
+                                await new Promise((resolve) => {
+                                    audio.addEventListener("canplay", resolve, {
+                                        once: true,
+                                    });
+                                });
+                            }
+
+                            const playPromise = audio.play();
+
+                            if (playPromise !== undefined) {
+                                await playPromise;
+                                playIcon.classList.add("hidden");
+                                pauseIcon.classList.remove("hidden");
+                                startTimeUpdate();
+                            }
                         } catch (error) {
                             console.error("Error playing audio:", error);
+                            // Reset UI on error
+                            playIcon.classList.remove("hidden");
+                            pauseIcon.classList.add("hidden");
                         }
                     } else {
                         audio.pause();
                         playIcon.classList.remove("hidden");
                         pauseIcon.classList.add("hidden");
-                        stopAnimation();
+                        stopTimeUpdate();
                     }
                 });
 
                 function seekToPosition(e) {
                     if (!audio.duration || isNaN(audio.duration)) return;
-                    
+
+                    ensureAudioLoaded();
+
                     const rect = e.currentTarget.getBoundingClientRect();
                     const clickX = e.type.includes("touch")
                         ? e.touches[0].clientX
@@ -725,40 +672,25 @@
                         0,
                         Math.min(1, (clickX - rect.left) / rect.width),
                     );
-                    
+
                     audio.currentTime = percent * audio.duration;
-                    
-                    // Update UI immediately
-                    updateContainerWidth();
-                    updateProgressUI();
+                    updateTimeDisplay();
                 }
 
-                progressBar.addEventListener("click", seekToPosition);
                 vizContainer.addEventListener("click", seekToPosition);
 
                 // Touch support for seeking
-                progressBar.addEventListener("touchstart", (e) => {
-                    e.preventDefault();
-                    seekToPosition(e);
-                });
-
                 vizContainer.addEventListener("touchstart", (e) => {
                     seekToPosition(e);
                 });
 
                 // Handle touch move for scrubbing
-                progressBar.addEventListener("touchmove", (e) => {
-                    e.preventDefault();
-                    seekToPosition(e);
-                });
-
                 vizContainer.addEventListener("touchmove", (e) => {
                     seekToPosition(e);
                 });
 
                 audio.addEventListener("loadedmetadata", () => {
                     duration.textContent = formatTime(audio.duration);
-                    updateContainerWidth();
                 });
 
                 audio.addEventListener("canplay", () => {
@@ -767,40 +699,29 @@
                     }
                 });
 
-                // Use timeupdate as backup sync for Safari to prevent drift
-                if (isSafari) {
-                    audio.addEventListener("timeupdate", () => {
-                        // Only sync if we're playing and RAF might have drifted
-                        if (!audio.paused && !audio.ended) {
-                            lastSyncTime = performance.now();
-                        }
-                    });
-                }
+                audio.addEventListener("timeupdate", updateTimeDisplay);
 
                 audio.addEventListener("play", () => {
-                    startAnimation();
+                    startTimeUpdate();
                 });
 
                 audio.addEventListener("pause", () => {
-                    stopAnimation();
+                    stopTimeUpdate();
                 });
 
                 audio.addEventListener("ended", () => {
                     playIcon.classList.remove("hidden");
                     pauseIcon.classList.add("hidden");
                     audio.currentTime = 0;
-                    progress.style.width = "0%";
-                    overlay.style.width = "0%";
-                    line.style.transform = `translateX(-1px)`;
                     currentTime.textContent = formatTime(0);
-                    stopAnimation();
+                    stopTimeUpdate();
                 });
 
                 audio.addEventListener("error", (e) => {
                     console.error("Audio error:", e);
                     playIcon.classList.remove("hidden");
                     pauseIcon.classList.add("hidden");
-                    stopAnimation();
+                    stopTimeUpdate();
                 });
 
                 // Pause when other audio elements play
@@ -814,26 +735,11 @@
                             audio.pause();
                             playIcon.classList.remove("hidden");
                             pauseIcon.classList.add("hidden");
-                            stopAnimation();
+                            stopTimeUpdate();
                         }
                     },
                     true,
                 );
-
-                // Update cached width on resize
-                let resizeTimeout;
-                window.addEventListener("resize", () => {
-                    clearTimeout(resizeTimeout);
-                    resizeTimeout = setTimeout(() => {
-                        updateContainerWidth();
-                        if (!audio.paused) {
-                            updateProgressUI();
-                        }
-                    }, 100);
-                });
-
-                // Initial width cache
-                updateContainerWidth();
             });
         </script>
     </body>
