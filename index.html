@@ -603,9 +603,12 @@
         </div>
 
         <script>
-            // Improved audio player with smooth animations using requestAnimationFrame
+            // Improved audio player with browser-specific optimizations
             document.querySelectorAll(".audio-player").forEach((player) => {
-                const audio = new Audio(player.dataset.audio);
+                const audio = new Audio();
+                audio.preload = "metadata";
+                audio.src = player.dataset.audio;
+                
                 const playBtn = player.querySelector(".play-btn");
                 const playIcon = player.querySelector(".play-icon");
                 const pauseIcon = player.querySelector(".pause-icon");
@@ -622,6 +625,10 @@
                 let animationFrameId = null;
                 let containerWidth = 0;
                 let isSeeking = false;
+                let lastSyncTime = 0;
+                
+                // Detect Safari
+                const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
 
                 function formatTime(seconds) {
                     if (!isFinite(seconds)) return "0:00";
@@ -635,30 +642,44 @@
                     containerWidth = overlay.parentElement.offsetWidth;
                 }
 
-                function updateProgress() {
-                    if (!audio.paused && !audio.ended && !isSeeking) {
-                        const percent =
-                            (audio.currentTime / audio.duration) * 100;
-                        progress.style.width = percent + "%";
-                        overlay.style.width = percent + "%";
-                        
-                        // Use cached width to avoid layout reflow
-                        if (containerWidth > 0) {
-                            line.style.transform = `translateX(${(percent / 100) * containerWidth - 1}px)`;
-                        }
-                        currentTime.textContent = formatTime(audio.currentTime);
+                function updateProgressUI() {
+                    if (!audio.duration || isNaN(audio.duration)) return;
+                    
+                    const percent = (audio.currentTime / audio.duration) * 100;
+                    progress.style.width = percent + "%";
+                    overlay.style.width = percent + "%";
+                    
+                    // Use cached width to avoid layout reflow
+                    if (containerWidth > 0) {
+                        line.style.transform = `translateX(${(percent / 100) * containerWidth - 1}px)`;
+                    }
+                    currentTime.textContent = formatTime(audio.currentTime);
+                }
 
-                        animationFrameId =
-                            requestAnimationFrame(updateProgress);
+                // Use requestAnimationFrame for smooth 60fps updates (all browsers)
+                function updateProgressRAF() {
+                    if (!audio.paused && !audio.ended) {
+                        updateProgressUI();
+                        
+                        // Safari: Periodically sync to prevent drift
+                        if (isSafari) {
+                            const now = performance.now();
+                            if (now - lastSyncTime > 500) { // Sync every 500ms
+                                lastSyncTime = now;
+                            }
+                        }
+                        
+                        animationFrameId = requestAnimationFrame(updateProgressRAF);
                     }
                 }
 
                 function startAnimation() {
-                    if (animationFrameId) {
-                        cancelAnimationFrame(animationFrameId);
-                    }
-                    updateContainerWidth(); // Update width before starting
-                    animationFrameId = requestAnimationFrame(updateProgress);
+                    stopAnimation();
+                    updateContainerWidth();
+                    lastSyncTime = performance.now();
+                    
+                    // Use RAF for all browsers including Safari for smooth animation
+                    animationFrameId = requestAnimationFrame(updateProgressRAF);
                 }
 
                 function stopAnimation() {
@@ -668,7 +689,7 @@
                     }
                 }
 
-                playBtn.addEventListener("click", () => {
+                playBtn.addEventListener("click", async () => {
                     if (audio.paused) {
                         // Pause all other audio elements
                         document.querySelectorAll("audio").forEach((a) => {
@@ -676,10 +697,15 @@
                                 a.pause();
                             }
                         });
-                        audio.play();
-                        playIcon.classList.add("hidden");
-                        pauseIcon.classList.remove("hidden");
-                        startAnimation();
+                        
+                        try {
+                            await audio.play();
+                            playIcon.classList.add("hidden");
+                            pauseIcon.classList.remove("hidden");
+                            startAnimation();
+                        } catch (error) {
+                            console.error("Error playing audio:", error);
+                        }
                     } else {
                         audio.pause();
                         playIcon.classList.remove("hidden");
@@ -689,6 +715,8 @@
                 });
 
                 function seekToPosition(e) {
+                    if (!audio.duration || isNaN(audio.duration)) return;
+                    
                     const rect = e.currentTarget.getBoundingClientRect();
                     const clickX = e.type.includes("touch")
                         ? e.touches[0].clientX
@@ -698,68 +726,56 @@
                         Math.min(1, (clickX - rect.left) / rect.width),
                     );
                     
-                    isSeeking = true;
                     audio.currentTime = percent * audio.duration;
                     
-                    // Update UI immediately during seek
-                    const percentDisplay = percent * 100;
-                    progress.style.width = percentDisplay + "%";
-                    overlay.style.width = percentDisplay + "%";
+                    // Update UI immediately
                     updateContainerWidth();
-                    line.style.transform = `translateX(${percent * containerWidth - 1}px)`;
-                    currentTime.textContent = formatTime(audio.currentTime);
-                    
-                    // Clear seeking flag after a brief delay
-                    setTimeout(() => {
-                        isSeeking = false;
-                        if (!audio.paused) {
-                            startAnimation();
-                        }
-                    }, 50);
+                    updateProgressUI();
                 }
 
                 progressBar.addEventListener("click", seekToPosition);
                 vizContainer.addEventListener("click", seekToPosition);
 
-                // Improved touch support for seeking
-                let touchTimeout;
+                // Touch support for seeking
                 progressBar.addEventListener("touchstart", (e) => {
                     e.preventDefault();
-                    clearTimeout(touchTimeout);
                     seekToPosition(e);
                 });
 
                 vizContainer.addEventListener("touchstart", (e) => {
-                    clearTimeout(touchTimeout);
                     seekToPosition(e);
                 });
 
                 // Handle touch move for scrubbing
-                let isTouchScrubbing = false;
-                
                 progressBar.addEventListener("touchmove", (e) => {
                     e.preventDefault();
-                    isTouchScrubbing = true;
                     seekToPosition(e);
                 });
 
                 vizContainer.addEventListener("touchmove", (e) => {
-                    isTouchScrubbing = true;
                     seekToPosition(e);
-                });
-
-                progressBar.addEventListener("touchend", () => {
-                    isTouchScrubbing = false;
-                });
-
-                vizContainer.addEventListener("touchend", () => {
-                    isTouchScrubbing = false;
                 });
 
                 audio.addEventListener("loadedmetadata", () => {
                     duration.textContent = formatTime(audio.duration);
                     updateContainerWidth();
                 });
+
+                audio.addEventListener("canplay", () => {
+                    if (audio.duration && !isNaN(audio.duration)) {
+                        duration.textContent = formatTime(audio.duration);
+                    }
+                });
+
+                // Use timeupdate as backup sync for Safari to prevent drift
+                if (isSafari) {
+                    audio.addEventListener("timeupdate", () => {
+                        // Only sync if we're playing and RAF might have drifted
+                        if (!audio.paused && !audio.ended) {
+                            lastSyncTime = performance.now();
+                        }
+                    });
+                }
 
                 audio.addEventListener("play", () => {
                     startAnimation();
@@ -773,11 +789,17 @@
                     playIcon.classList.remove("hidden");
                     pauseIcon.classList.add("hidden");
                     audio.currentTime = 0;
-                    const percent = 0;
-                    progress.style.width = percent + "%";
-                    overlay.style.width = percent + "%";
+                    progress.style.width = "0%";
+                    overlay.style.width = "0%";
                     line.style.transform = `translateX(-1px)`;
                     currentTime.textContent = formatTime(0);
+                    stopAnimation();
+                });
+
+                audio.addEventListener("error", (e) => {
+                    console.error("Audio error:", e);
+                    playIcon.classList.remove("hidden");
+                    pauseIcon.classList.add("hidden");
                     stopAnimation();
                 });
 
@@ -804,6 +826,9 @@
                     clearTimeout(resizeTimeout);
                     resizeTimeout = setTimeout(() => {
                         updateContainerWidth();
+                        if (!audio.paused) {
+                            updateProgressUI();
+                        }
                     }, 100);
                 });
 
