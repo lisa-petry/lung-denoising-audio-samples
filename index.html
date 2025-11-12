@@ -620,6 +620,8 @@
                 );
 
                 let animationFrameId = null;
+                let containerWidth = 0;
+                let isSeeking = false;
 
                 function formatTime(seconds) {
                     if (!isFinite(seconds)) return "0:00";
@@ -628,13 +630,22 @@
                     return m + ":" + (s < 10 ? "0" : "") + s;
                 }
 
+                // Cache container width to avoid layout thrashing
+                function updateContainerWidth() {
+                    containerWidth = overlay.parentElement.offsetWidth;
+                }
+
                 function updateProgress() {
-                    if (!audio.paused && !audio.ended) {
+                    if (!audio.paused && !audio.ended && !isSeeking) {
                         const percent =
                             (audio.currentTime / audio.duration) * 100;
                         progress.style.width = percent + "%";
                         overlay.style.width = percent + "%";
-                        line.style.transform = `translateX(${(percent / 100) * overlay.parentElement.offsetWidth - 1}px)`;
+                        
+                        // Use cached width to avoid layout reflow
+                        if (containerWidth > 0) {
+                            line.style.transform = `translateX(${(percent / 100) * containerWidth - 1}px)`;
+                        }
                         currentTime.textContent = formatTime(audio.currentTime);
 
                         animationFrameId =
@@ -646,6 +657,7 @@
                     if (animationFrameId) {
                         cancelAnimationFrame(animationFrameId);
                     }
+                    updateContainerWidth(); // Update width before starting
                     animationFrameId = requestAnimationFrame(updateProgress);
                 }
 
@@ -685,24 +697,68 @@
                         0,
                         Math.min(1, (clickX - rect.left) / rect.width),
                     );
+                    
+                    isSeeking = true;
                     audio.currentTime = percent * audio.duration;
+                    
+                    // Update UI immediately during seek
+                    const percentDisplay = percent * 100;
+                    progress.style.width = percentDisplay + "%";
+                    overlay.style.width = percentDisplay + "%";
+                    updateContainerWidth();
+                    line.style.transform = `translateX(${percent * containerWidth - 1}px)`;
+                    currentTime.textContent = formatTime(audio.currentTime);
+                    
+                    // Clear seeking flag after a brief delay
+                    setTimeout(() => {
+                        isSeeking = false;
+                        if (!audio.paused) {
+                            startAnimation();
+                        }
+                    }, 50);
                 }
 
                 progressBar.addEventListener("click", seekToPosition);
                 vizContainer.addEventListener("click", seekToPosition);
 
-                // Touch support for seeking
+                // Improved touch support for seeking
+                let touchTimeout;
                 progressBar.addEventListener("touchstart", (e) => {
                     e.preventDefault();
+                    clearTimeout(touchTimeout);
                     seekToPosition(e);
                 });
 
                 vizContainer.addEventListener("touchstart", (e) => {
+                    clearTimeout(touchTimeout);
                     seekToPosition(e);
+                });
+
+                // Handle touch move for scrubbing
+                let isTouchScrubbing = false;
+                
+                progressBar.addEventListener("touchmove", (e) => {
+                    e.preventDefault();
+                    isTouchScrubbing = true;
+                    seekToPosition(e);
+                });
+
+                vizContainer.addEventListener("touchmove", (e) => {
+                    isTouchScrubbing = true;
+                    seekToPosition(e);
+                });
+
+                progressBar.addEventListener("touchend", () => {
+                    isTouchScrubbing = false;
+                });
+
+                vizContainer.addEventListener("touchend", () => {
+                    isTouchScrubbing = false;
                 });
 
                 audio.addEventListener("loadedmetadata", () => {
                     duration.textContent = formatTime(audio.duration);
+                    updateContainerWidth();
                 });
 
                 audio.addEventListener("play", () => {
@@ -741,6 +797,18 @@
                     },
                     true,
                 );
+
+                // Update cached width on resize
+                let resizeTimeout;
+                window.addEventListener("resize", () => {
+                    clearTimeout(resizeTimeout);
+                    resizeTimeout = setTimeout(() => {
+                        updateContainerWidth();
+                    }, 100);
+                });
+
+                // Initial width cache
+                updateContainerWidth();
             });
         </script>
     </body>
